@@ -1,6 +1,7 @@
 import ldap
 import ldap.modlist as modlist
-import getpass
+
+
 def ldap_initialize(remote, port, user, password):
     global conn
     server = 'ldap://' + remote  # not secure connection
@@ -10,9 +11,10 @@ def ldap_initialize(remote, port, user, password):
         conn.set_option(ldap.OPT_REFERRALS, 0)
         conn.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         bind = conn.simple_bind_s(user, password)
-        print("Successfully bound to %s.\n" %server)
+        print("Successfully bound to %s.\n" % server)
     except ldap.LDAPError as e:
         print(str(e))
+
 
 def create_user(name, surname, phone_number):
     global conn
@@ -33,11 +35,35 @@ def create_user(name, surname, phone_number):
     except ldap.LDAPError as e:
         print(str(e))
 
+
+def get_user(name):
+    global conn
+    try:
+        base = 'CN=Users,DC=hnn,DC=local'
+        criteria = "(&(objectClass=user)(givenName=" + name + "))"
+        attributes = ['cn', 'telephoneNumber']
+        print('Searching for name:%s' % (name))
+        print('-------------')
+        result = conn.search_s(base, ldap.SCOPE_SUBTREE, criteria, attributes)
+        if len(result) != 0:
+            for dn, attr in result:
+                print('User DN:%s' % dn)
+                print('User Full Name:%s' % attr['cn'][0].decode('utf-8'))
+                print('User Phone Number:%s' % attr['telephoneNumber'][0].decode('utf-8'))
+                print('-------------')
+        else:
+            print('User not found!')
+    except ldap.LDAPError as e:
+        print(str(e))
+
+
 def main():
     ldap_initialize(remote='192.168.1.60', port='636', user='administrator@hnn.local', password='ramY8.')
-    name = input('Enter name:')
-    surname = input('Enter surname:')
-    phone_number = input('Enter phone number:')
-    create_user(name=name, surname=surname, phone_number=phone_number)
+    # name = input('Enter name:')
+    # surname = input('Enter surname:')
+    # phone_number = input('Enter phone number:')
+    # create_user(name=name, surname=surname, phone_number=phone_number)
+    get_user(name='Jane')
+
 
 main()
