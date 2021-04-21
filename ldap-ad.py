@@ -9,11 +9,11 @@ def ldap_initialize(remote, port, user, password):
         server = 'ldaps://' + remote  + ':636' # secure connection
     elif port == 389:
         server = 'ldap://' + remote  # not secure connection
+    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
     conn = ldap.initialize(uri=server)
     try:
         conn.protocol_version = ldap.VERSION3
         conn.set_option(ldap.OPT_REFERRALS, 0)
-        conn.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         bind = conn.simple_bind_s(user, password)
         print("Successfully bound to %s.\n" % server)
     except ldap.LDAPError as e:
