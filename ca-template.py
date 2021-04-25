@@ -73,6 +73,11 @@ def create_template(name):
 
 
 def create_section(name):
+    conf_file = open('/root/ca/intermediate/openssl.cnf','a')
+    lines = parse_template(name)
+    lines.append('\n')
+    conf_file.writelines(lines)
+    conf_file.close()
     return
 
 
@@ -99,10 +104,16 @@ def parse_template(name):
     ext_keys = ext_keys[:-2]  # remove unnecessary part
     keys = keys[:-2]
 
-    sect_name = '[ ' + name + ' ]'
-    bsc_cons = 'basicConstraints = CA:'  # CA MI DEĞİL Mİ PATH LEN ?
-    key_usage = 'keyUsage = ' + keys
-    extended_key_usage = 'extendedKeyUsage = ' + ext_keys
+    sect_name = '\n[ ' + name.lower() + ' ]'
+    bsc_cons = '\nbasicConstraints = CA:FALSE'
+    key_usage = '\nkeyUsage = ' + keys
+    extended_key_usage = '\nextendedKeyUsage = ' + ext_keys
+    ski = '\nsubjectKeyIdentifier = hash'
+    aki = '\nauthorityKeyIdentifier = keyid,issuer'
+    section = [sect_name, bsc_cons, ski, aki, key_usage, extended_key_usage]
+    
+    return section
+
 
 
 def subset_sum(numbers, target, partial=[]):
@@ -123,7 +134,7 @@ def subset_sum(numbers, target, partial=[]):
 
 def main():
     ldap_initialize(remote='192.168.1.60', port=636, user='administrator@hnn.local', password='ramY8.')
-    parse_template('Machine')
+    create_section('User')
     conn.unbind()
 
 
