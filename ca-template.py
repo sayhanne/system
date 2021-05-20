@@ -54,7 +54,14 @@ def ldap_initialize(remote, port, user, password):
 def get_template(name):
     criteria = '(cn='+ name +')'
     result = conn.search_s(base, ldap.SCOPE_SUBTREE, criteria)
-    print(result)
+    for dn, attr in result:
+        if dn is not None:
+            print('Template DN:%s' % dn)
+            for key, value in attr.items():
+                print(key,value)
+            print('-------------')
+        else:
+            continue
 
 def create_template(name):
     template_dn = 'CN=' + name + ',' + base
@@ -134,7 +141,7 @@ def subset_sum(numbers, target, partial=[]):
 
 def main():
     ldap_initialize(remote='192.168.1.60', port=636, user='administrator@hnn.local', password='ramY8.')
-    create_section('User')
+    get_template('Machine')
     conn.unbind()
 
 
