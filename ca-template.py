@@ -63,21 +63,54 @@ def get_template(name):
         else:
             continue
 
+
+# Create machine template on AD
 def create_template(name):
+    enrollment_base = 'CN=Enrollment Services,CN=Public Key Services,CN=Services,CN=Configuration,DC=hnn,DC=local'
     template_dn = 'CN=' + name + ',' + base
-    default_csps=[b'2,Microsoft Base Cryptographic Provider v1.0', b'1,Microsoft Enhanced Cryptographic Provider v1.0']
     try:
         template_attr = {}
         template_attr['objectclass'] = [b'top', b'pKICertificateTemplate']
         template_attr['cn'] = name.encode("utf-8")
         template_attr['displayName'] = name.encode("utf-8")
-        template_attr['pKIDefaultCSPs'] = default_csps
+        template_attr['pKIDefaultCSPs'] = [b'1,Microsoft RSA SChannel Cryptographic Provider']
+        template_attr['msPKI-Cert-Template-OID'] = [b'1.3.6.1.4.1.311.21.8.14094355.13105809.7359646.5552592.6027284.90.1.14']
+        template_attr['msPKI-Enrollment-Flag'] = [b'32']
+        template_attr['msPKI-Certificate-Name-Flag'] = [b'402653184']
+        template_attr['flags'] = [b'66144']
+        template_attr['revision'] = [b'5']
+        template_attr['pKIDefaultKeySpec'] = [b'1']
+        template_attr['pKIKeyUsage'] = [b'\xa0\x00']
+        template_attr['pKIMaxIssuingDepth'] = [b'0']
+        template_attr['pKICriticalExtensions'] = [b'2.5.29.15']
+        template_attr['pKIExpirationPeriod'] = [b'\x00@9\x87.\xe1\xfe\xff']
+        template_attr['pKIOverlapPeriod'] = [b'\x00\x80\xa6\n\xff\xde\xff\xff']
+        template_attr['pKIExtendedKeyUsage'] = [b'1.3.6.1.5.5.7.3.2', b'1.3.6.1.5.5.7.3.1']
+        template_attr['dSCorePropagationData'] = [b'16010101000000.0Z']
+        template_attr['msPKI-RA-Signature'] = [b'0']
+        template_attr['msPKI-Private-Key-Flag'] = [b'0']
+        template_attr['msPKI-Minimal-Key-Size'] = [b'2048']
+        template_attr['msPKI-Template-Minor-Revision'] = [b'1']
+        template_attr['msPKI-Template-Schema-Version'] = [b'1']
         template_ldif = modlist.addModlist(template_attr)
         conn.add_s(template_dn, template_ldif)
         print('New template added succesfully!')
+
+        criteria = '(objectClass=pKIEnrollmentService)'
+        attribute = ['certificateTemplates']
+        result = conn.search_s(enrollment_base, ldap.SCOPE_SUBTREE, criteria, attribute)
+        dn = result[0][0]
+        old_templates = result[0][1]
+        templates = old_templates['certificateTemplates'].copy()  # Shallow copy
+        templates.append(name.encode('utf-8'))
+        new_templates = {'certificateTemplates': templates}
+        issue_ldif = modlist.modifyModlist(old_templates,new_templates)
+        conn.modify_s(dn, issue_ldif)
+        print('Template has been issued!')
     except ldap.LDAPError as e:
         print(str(e))
-
+    
+    
 
 def create_section(name):
     conf_file = open('/root/ca/intermediate/openssl.cnf','a')
@@ -141,7 +174,7 @@ def subset_sum(numbers, target, partial=[]):
 
 def main():
     ldap_initialize(remote='192.168.1.60', port=636, user='administrator@hnn.local', password='ramY8.')
-    get_template('Machine')
+    create_template('Python-Machine')
     conn.unbind()
 
 
